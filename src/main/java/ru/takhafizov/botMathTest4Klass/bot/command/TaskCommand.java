@@ -46,7 +46,7 @@ public class TaskCommand {
         message.enableMarkdown(true);
         message.setChatId(chatId);
         message.setReplyMarkup(getTaskAnswerKeyboard(task.getAnswers()));
-        message.setText(task.getName());
+        message.setText(task.getName() + ": " + task.getQuestion());
         return message;
     }
 

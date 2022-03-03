@@ -37,8 +37,6 @@ public class Bot extends TelegramLongPollingCommandBot {
     public Bot() {
         super();
 
-//        serviceTask.generateTaskList();
-
         register(new StartCommand("start", "Старт"));
         register(new HelpCommand("help","Помощь"));
     }
