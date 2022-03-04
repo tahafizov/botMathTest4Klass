@@ -30,6 +30,11 @@ public class TaskCommand {
         if (text.equals("Нет, не знаю математику!")) {
             return generateTextMessage(chatId, "Очень жаль... " + userName + " приходи еще.");
         }
+        if (serviceTask.saveAnswer(chatId, text)) {
+            Optional<Task> optionalTask = serviceTask.getNextTaskByChatId(chatId);
+
+            return optionalTask.map(task -> generateTaskMessage(chatId, task)).orElseGet(() -> generateTextMessage(chatId, "Увы... пока заданий нет!"));
+        }
 
         return generateTextMessage(chatId, ERROR_MESSAGE);
     }

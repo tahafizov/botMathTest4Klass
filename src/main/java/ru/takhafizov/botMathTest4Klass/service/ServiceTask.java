@@ -1,17 +1,16 @@
 package ru.takhafizov.botMathTest4Klass.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.takhafizov.botMathTest4Klass.model.Task;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 public class ServiceTask {
     private final List<Task> taskList;
 
-    private final Map<String, List<Map<Integer, String>>> chatUserTaskIndex = new HashMap<>();
-//    private final Map<String, String> chatUserTaskAnswer = new HashMap<>();
+    private final Map<String, List<Map<Integer, String>>> chatUserTask = new HashMap<>();
 
     public List<Task> getTaskList() {
         return taskList;
@@ -28,28 +27,50 @@ public class ServiceTask {
     }
 
     public Optional<Task> getNextTaskByChatId(String chatId) {
-        int taskIndex = 0;
-        List<Map<Integer, String>> mapList;
 
-        if (chatUserTaskIndex.containsKey(chatId)) {
-            mapList = chatUserTaskIndex.get(chatId);
-            taskIndex = mapList.stream()
-                    .flatMap(r -> r.entrySet().stream().filter(f -> f.getValue().length() > 0).map(Map.Entry::getKey))
-                    .max((o1, o2) -> (o2 > o1) ? 1 : 0).orElse(0);
+        List<Map<Integer, String>> mapList;
+        int taskIndex;
+
+        Optional<Integer> optionalInteger = getMaxTaskIndex(chatId);
+        if (optionalInteger.isPresent()) {
+            taskIndex = optionalInteger.get();
+            mapList = chatUserTask.get(chatId);
+        } else {
+            taskIndex = 0;
+            mapList = new ArrayList<>();
         }
 
         if (taskIndex == taskList.size()) {
             return Optional.empty();
         }
-        chatUserTaskIndex.put(chatId, taskIndex);
+
+        Map<Integer, String> currentMap = new HashMap<>();
+        currentMap.put(taskIndex, "");
+        mapList.add(currentMap);
+        chatUserTask.put(chatId, mapList);
         return Optional.of(taskList.get(taskIndex));
     }
 
-    public String getCorrectAnswer(String chatId, String selectedAnswer) {
-        if (!chatUserTaskIndex.containsKey(chatId)) {
-            return null;
-        }
 
-        return taskList.get(chatUserTaskIndex.get(chatId)).getCorrectAnswer();
+    public boolean saveAnswer(String chatId, String answer) {
+        if (!chatUserTask.containsKey(chatId)) {
+            return false;
+        }
+        Optional<Integer> optionalInteger = getMaxTaskIndex(chatId);
+        if (optionalInteger.isPresent()) {
+            Integer taskIndex = optionalInteger.get();
+            chatUserTask.get(chatId).get(taskIndex).put(taskIndex, answer);
+            return true;
+        }
+        return false;
+    }
+
+    private Optional<Integer> getMaxTaskIndex(String chatId) {
+        if (!chatUserTask.containsKey(chatId)) {
+            return Optional.empty();
+        }
+        return chatUserTask.get(chatId).stream()
+                    .flatMap(r -> r.entrySet().stream().filter(f -> f.getValue().length() > 0).map(Map.Entry::getKey))
+                    .max((o1, o2) -> (o2 > o1) ? 1 : 0);
     }
 }
