@@ -15,7 +15,7 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class TaskCommand {
-    private static final String ERROR_MESSAGE = "Простите, я не понимаю Вас. Похоже, что Вы ввели сообщение, не соответствующее формату\n\n" +
+    private static final String ERROR_MESSAGE = "Прости, но ты ввел что-то не то...\n\n" +
             "Возможно, Вам поможет /help";
 
     private final ServiceTask serviceTask;
@@ -23,17 +23,18 @@ public class TaskCommand {
     public SendMessage taskCommandExecute(String chatId, String userName, String text) {
 
         if (text.equals("Да, продолжить!")) {
-            Optional<Task> optionalTask = serviceTask.getNextTaskByChatId(chatId);
+            Optional<Task> optionalTask = serviceTask.getFirstTaskByChatId(chatId);
 
-            return optionalTask.map(task -> generateTaskMessage(chatId, task)).orElseGet(() -> generateTextMessage(chatId, "Увы... пока заданий нет!"));
+            return optionalTask.map(task -> generateTaskMessage(chatId, task, ""))
+                    .orElseGet(() -> generateTextMessage(chatId, "Увы... пока заданий нет!"));
         }
         if (text.equals("Нет, не знаю математику!")) {
             return generateTextMessage(chatId, "Очень жаль... " + userName + " приходи еще.");
         }
         if (serviceTask.saveAnswer(chatId, text)) {
             Optional<Task> optionalTask = serviceTask.getNextTaskByChatId(chatId);
-
-            return optionalTask.map(task -> generateTaskMessage(chatId, task)).orElseGet(() -> generateTextMessage(chatId, "Увы... пока заданий нет!"));
+            return optionalTask.map(task -> generateTaskMessage(chatId, task, "Ответ принят\n"))
+                    .orElseGet(() -> generateTextMessage(chatId, serviceTask.getResultTest(chatId)));
         }
 
         return generateTextMessage(chatId, ERROR_MESSAGE);
@@ -46,12 +47,12 @@ public class TaskCommand {
         return message;
     }
 
-    private SendMessage generateTaskMessage(String chatId, Task task) {
+    private SendMessage generateTaskMessage(String chatId, Task task, String prefix) {
         SendMessage message = new SendMessage();
-        message.enableMarkdown(true);
+//        message.enableMarkdown(true);
         message.setChatId(chatId);
         message.setReplyMarkup(getTaskAnswerKeyboard(task.getAnswers()));
-        message.setText(task.getName() + ": " + task.getQuestion());
+        message.setText(prefix + task.getName() + ": " + task.getQuestion());
         return message;
     }
 
@@ -60,7 +61,7 @@ public class TaskCommand {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
-        replyKeyboardMarkup.setOneTimeKeyboard(false);
+        replyKeyboardMarkup.setOneTimeKeyboard(true);
 
         // Создаем список строк клавиатуры
         List<KeyboardRow> keyboard = new ArrayList<>();
